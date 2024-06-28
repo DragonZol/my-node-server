@@ -2,8 +2,6 @@ const express = require('express');
 const app = express();
 const port = 3000;
 const pool = require('./db');
-
-// Добавьте эту строку
 console.log('Сервер запускается, проверяем подключение к БД...');
 
 

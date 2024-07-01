@@ -18,7 +18,7 @@ app.get('/dynamic', (req, res) => {
     numbers.push(num);
   }
 
-  const result = numbers.reduce((acc, val) => acc * val, 1) / 3;
+  const result = (numbers[0] * numbers[1] * numbers[2]) / 3;
   res.json({ header: 'Calculated', body: result.toString() });
 });
 

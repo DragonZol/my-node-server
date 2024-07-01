@@ -3,34 +3,24 @@ const TelegramBot = require('node-telegram-bot-api');
 const token = '7097086634:AAFE4MUZgb0h-jHG0qyJAQ1RLOE-J6OMNaM';
 const bot = new TelegramBot(token, { polling: true });
 
-function sendHelp(chatId) {
-  bot.sendMessage(chatId, '/help - Показать список команд\n/site - Отправить ссылку на сайт\n/creator - Отправить имя создателя');
-}
-
-function sendSite(chatId) {
-  bot.sendMessage(chatId, 'Ссылка на сайт: https://students.forus.ru/');
-}
-
-function sendCreator(chatId) {
-  bot.sendMessage(chatId, 'Создатель бота: Пинчук Кирилл');
-}
-
-bot.on('message', (msg) => {
+bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
-  const text = msg.text;
+  bot.sendMessage(chatId, 'Привет, октагон!');
+});
 
-  // Проверяем команды
-  if (text == '/start') {
-    bot.sendMessage(chatId, 'Привет, октагон!');
-  } else if (text == '/help') {
-    sendHelp(chatId);
-  } else if (text == '/site') {
-    sendSite(chatId);
-  } else if (text == '/creator') {
-    sendCreator(chatId);
-  } else {
-    bot.sendMessage(chatId, 'Не понимаю команду. Напишите /help для получения списка команд.');
-  }
+bot.onText(/\/help/, (msg) => {
+  const chatId = msg.chat.id;
+  bot.sendMessage(chatId, '/help - Показать список команд\n/site - Отправить ссылку на сайт\n/creator - Отправить имя создателя');
+});
+
+bot.onText(/\/site/, (msg) => {
+  const chatId = msg.chat.id;
+  bot.sendMessage(chatId, 'Ссылка на сайт: https://students.forus.ru/');
+});
+
+bot.onText(/\/creator/, (msg) => {
+  const chatId = msg.chat.id;
+  bot.sendMessage(chatId, 'Создатель бота: Пинчук Кирилл');
 });
 
 console.log('Bot started...');

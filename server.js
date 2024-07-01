@@ -7,16 +7,19 @@ app.get('/static', (req, res) => {
 });
 
 app.get('/dynamic', (req, res) => {
-  const a = parseFloat(req.query.a);
-  const b = parseFloat(req.query.b);
-  const c = parseFloat(req.query.c);
+  const values = [req.query.a, req.query.b, req.query.c];
+  const numbers = [];
 
-  if (isNaN(a) || isNaN(b) || isNaN(c)) {
-    res.json({ header: 'Error' });
-  } else {
-    const result = (a * b * c) / 3;
-    res.json({ header: 'Calculated', body: result.toString() });
+  for (let i = 0; i < values.length; i++) {
+    const num = parseFloat(values[i]);
+    if (isNaN(num)) {
+      return res.json({ header: 'Error' });
+    }
+    numbers.push(num);
   }
+
+  const result = numbers.reduce((acc, val) => acc * val, 1) / 3;
+  res.json({ header: 'Calculated', body: result.toString() });
 });
 
 app.listen(port, () => {

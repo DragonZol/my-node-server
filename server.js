@@ -7,15 +7,14 @@ app.get('/static', (req, res) => {
 });
 
 app.get('/dynamic', (req, res) => {
-  const values = [req.query.a, req.query.b, req.query.c];
+  let props = ["a", "b", "c"];
   const numbers = [];
 
-  for (let i = 0; i < values.length; i++) {
-    const num = parseFloat(values[i]);
-    if (isNaN(num)) {
-      return res.json({ header: 'Error' });
+  for (let prop_name of props) {
+    if (!req.query[prop_name] || isNaN(parseFloat(req.query[prop_name]))) {
+      return res.json({ header: 'Error', message: `Invalid or missing parameter: ${prop_name}` });
     }
-    numbers.push(num);
+    numbers.push(parseFloat(req.query[prop_name]));
   }
 
   const result = (numbers[0] * numbers[1] * numbers[2]) / 3;

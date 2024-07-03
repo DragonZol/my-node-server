@@ -1,6 +1,7 @@
 const TelegramBot = require('node-telegram-bot-api');
 const promisePool = require('./db');
 
+// Замените на ваш токен бота
 const token = '7097086634:AAFE4MUZgb0h-jHG0qyJAQ1RLOE-J6OMNaM';
 const bot = new TelegramBot(token, { polling: true });
 
@@ -58,61 +59,47 @@ function getItemByID(chatId, itemId) {
     });
 }
 
+bot.onText(/\/start/, (msg) => {
+  bot.sendMessage(msg.chat.id, 'Привет, октагон!');
+});
+
+bot.onText(/\/help/, (msg) => {
+  sendHelp(msg.chat.id);
+});
+
+bot.onText(/\/site/, (msg) => {
+  sendSite(msg.chat.id);
+});
+
+bot.onText(/\/creator/, (msg) => {
+  sendCreator(msg.chat.id);
+});
+
+bot.onText(/\/randomItem/, (msg) => {
+  getRandomItem(msg.chat.id);
+});
+
+bot.onText(/\/deleteItem/, (msg) => {
+  bot.sendMessage(msg.chat.id, 'Пожалуйста, введите ID необходимого предмета');
+  currentAction[msg.chat.id] = 'deleteItem';
+});
+
+bot.onText(/\/getItemByID/, (msg) => {
+  bot.sendMessage(msg.chat.id, 'Пожалуйста, введите ID необходимого предмета');
+  currentAction[msg.chat.id] = 'getItemByID';
+});
+
+// Блок для приёма сообщения о необходимом ID, чтобы не писать его чезез пробел после команды, так как это не удобно
 bot.on('message', (msg) => {
   const chatId = msg.chat.id;
-  const text = msg.text;
-
-  if (text.startsWith('/')) {
-    switch (text) {
-      case '/start':
-        bot.sendMessage(chatId, 'Привет, октагон!');
-        break;
-      case '/help':
-        sendHelp(chatId);
-        break;
-      case '/site':
-        sendSite(chatId);
-        break;
-      case '/creator':
-        sendCreator(chatId);
-        break;
-      case '/randomItem':
-        getRandomItem(chatId);
-        break;
-      case '/deleteItem':
-        bot.sendMessage(chatId, 'Пожалуйста, введите ID необходимого предмета');
-        currentAction[chatId] = 'deleteItem';
-        break;
-      case '/getItemByID':
-        bot.sendMessage(chatId, 'Пожалуйста, введите ID необходимого предмета');
-        currentAction[chatId] = 'getItemByID';
-        break;
-      default:
-        bot.sendMessage(chatId, 'Не понимаю команду. Напишите /help для получения списка команд.');
-        break;
-    }
-  } else {
+  if (!msg.text.startsWith('/')) {
     const action = currentAction[chatId];
-
-  if (action) {
-      const itemId = text;
-
-      if (isNaN(itemId) || !Number.isInteger(parseFloat(itemId))) {
-        bot.sendMessage(chatId, 'Пожалуйста, введите корректный ID предмета');
-        return;
-      }
-
-      switch (action) {
-        case 'deleteItem':
-          deleteItem(chatId, itemId);
-          break;
-        case 'getItemByID':
-          getItemByID(chatId, itemId);
-          break;
-      }
+    if (action === 'deleteItem') {
+      deleteItem(chatId, msg.text);
       delete currentAction[chatId];
-    } else {
-      bot.sendMessage(chatId, 'Не понимаю команду. Напишите /help для получения списка команд.');
+    } else if (action === 'getItemByID') {
+      getItemByID(chatId, msg.text);
+      delete currentAction[chatId];
     }
   }
 });

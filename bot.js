@@ -8,7 +8,7 @@ const bot = new TelegramBot(token, { polling: true });
 let currentAction = {};
 
 function sendHelp(chatId) {
-  bot.sendMessage(chatId, '/help - Показать список команд\n/site - Отправить ссылку на сайт\n/creator - Отправить имя создателя\n/randomItem - Получить случайный предмет\n/deleteItem - Удалить предмет\n/getItemByID - Получить предмет по ID\n!qr - Сгенерировать QR-код\n!webshot - Сделать скриншот сайта');
+  bot.sendMessage(chatId, '/help - Показать список команд\n/site - Отправить ссылку на сайт\n/creator - Отправить имя создателя\n/randomItem - Получить случайный предмет\n/deleteItem - Удалить предмет\n/getItemByID - Получить предмет по ID\n!qr - Сгенерировать QR-код\n!webscr - Сделать скриншот сайта');
 }
 
 function sendSite(chatId) {
@@ -70,7 +70,7 @@ async function captureScreenshot(url) {
 }
 
 // Функция для отправки скриншота сайта
-bot.onText(/^\!webshot/, async function(msg) {
+bot.onText(/^\!webscr/, async function(msg) {
   var userId = msg.from.id;
   var url = msg.text.substring(8).trim();
 

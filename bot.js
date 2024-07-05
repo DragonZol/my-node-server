@@ -1,14 +1,19 @@
 const TelegramBot = require('node-telegram-bot-api');
+const puppeteer = require('puppeteer'); // Используем библиотеку для создания скриншотов
 const promisePool = require('./db');
-const puppeteer = require('puppeteer'); //Используем библиотеку для создания скриншотов вместо обращения к сайту
+const { setIntervalAsync } = require('set-interval-async/dynamic'); // Используем set-interval-async
+const cron = require('node-cron');//Используем для планирования задач
 
 const token = '7097086634:AAFE4MUZgb0h-jHG0qyJAQ1RLOE-J6OMNaM';
 const bot = new TelegramBot(token, { polling: true });
 
+const TIMEZONE = "Europe/Moscow";
+const TWO_DAYS = 2 * 24 * 60 * 60 * 1000;
+
 let currentAction = {};
 
 function sendHelp(chatId) {
-  bot.sendMessage(chatId, '/help - Показать список команд\n/site - Отправить ссылку на сайт\n/creator - Отправить имя создателя\n/randomItem - Получить случайный предмет\n/deleteItem - Удалить предмет\n/getItemByID - Получить предмет по ID\n!qr - Сгенерировать QR-код\n!webshot - Сделать скриншот сайта');
+  bot.sendMessage(chatId, '/help - Показать список команд\n/site - Отправить ссылку на сайт\n/creator - Отправить имя создателя\n/randomItem - Получить случайный предмет\n/deleteItem - Удалить предмет\n/getItemByID - Получить предмет по ID\n!qr - Сгенерировать QR-код\n!webscr - Сделать скриншот сайта');
 }
 
 function sendSite(chatId) {
@@ -28,6 +33,11 @@ function getRandomItem(chatId) {
     .catch((err) => {
       bot.sendMessage(chatId, 'Ошибка: не удается извлечь случайный элемент');
     });
+}
+
+async function updateUserLastMessage(userId) {
+  const today = new Date().toISOString().split('T')[0];
+  await promisePool.execute('INSERT INTO Users (id, lastMessage) VALUES (?, ?) ON DUPLICATE KEY UPDATE lastMessage = ?', [userId, today, today]);
 }
 
 function deleteItem(chatId, itemId) {
@@ -70,7 +80,7 @@ async function captureScreenshot(url) {
 }
 
 // Функция для отправки скриншота сайта
-bot.onText(/^\!webshot/, async function(msg) {
+bot.onText(/^\!webscr/, async function(msg) {
   var userId = msg.from.id;
   var url = msg.text.substring(8).trim();
 
@@ -103,7 +113,7 @@ bot.onText(/^\!qr/, function(msg) {
   var encodedData = encodeURIComponent(data);
   var imageqr = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodedData}${uniqueParam}`;
 
-  // Сделал отправку не через sendMessage, а через photo, потому что оно как-то криво работало
+  // Отправляем изображение напрямую
   bot.sendPhoto(msg.chat.id, imageqr, { caption: `✏️ QR-код для: ${data}` });
 });
 
@@ -137,9 +147,14 @@ bot.onText(/\/getItemByID/, (msg) => {
   currentAction[msg.chat.id] = 'getItemByID';
 });
 
-// Блок для приёма сообщения о необходимом ID, чтобы не писать его чезез пробел после команды, так как это не удобно
-bot.on('message', (msg) => {
+// Блок для приёма сообщения о необходимом ID, чтобы не писать его через пробел после команды, так как это неудобно
+bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
+  const userId = msg.from.id;
+
+  // Обновляем дату последнего сообщения пользователя
+  await updateUserLastMessage(userId);
+
   if (!msg.text.startsWith('/')) {
     const action = currentAction[chatId];
     if (action === 'deleteItem') {
@@ -150,6 +165,23 @@ bot.on('message', (msg) => {
       delete currentAction[chatId];
     }
   }
+});
+
+// Таймер для отправки сообщения пользователям, которые не писали более 2х суток
+cron.schedule('0 13 * * *', async () => {
+  try {
+	//Вариант для тестирования (отправка сообщения через 1 минуту)
+	//const [users] = await promisePool.execute('SELECT * FROM Users WHERE lastMessage < DATE_SUB(NOW(), INTERVAL 1 MINUTE)');
+    
+	const [users] = await promisePool.execute('SELECT * FROM Users WHERE lastMessage < DATE_SUB(NOW(), INTERVAL 2 DAY)');
+    users.forEach((user) => {
+      getRandomItem(user.id);
+    });
+  } catch (error) {
+    console.error('Ошибка при отправке сообщений пользователям:', error);
+  }
+}, {
+  timezone: TIMEZONE
 });
 
 console.log('Bot started...');
